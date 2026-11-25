@@ -1,40 +1,32 @@
-# Tutorial 1: Creating Your First API
+# Tutorial 2: Returning HTML from a GET Endpoint
 
-Build a small web API and understand how a client asks a server for data. Python is our implementation language; the focus is web development concepts and good coding habits.
+Use the API from Tutorial 1 to serve a web page. You will learn how the response's content type tells the browser what it received, and how HTML becomes a rendered page.
 
-**Time:** 30–45 minutes. **Prerequisites:** Python 3.10+, Git, a text editor, and basic familiarity with functions and dictionaries.
+**Time:** 20–30 minutes. **Prerequisites:** [Tutorial 1](https://github.com/Jxstxn629/web-dev-foundations/tree/tutorial-01-first-api), Python 3.10+, Git, and a text editor.
 
-## 1. Understand the request and response
+## 1. Get the lesson
 
-An API is an interface through which programs interact. A web API uses HTTP requests and responses.
-
-Your browser is the **client**; our Python application is the **server**. For example:
-
-```text
-Client -> GET /hello?name=Ada -> Server
-Client <- 200 OK + JSON body <- Server
-```
-
-- **GET** is an HTTP method for retrieving data.
-- **/hello** is a path. A method and path together identify an endpoint.
-- **?name=Ada** supplies input through a query parameter.
-- **JSON** is a text format for structured data.
-- The **status code** describes the outcome; the **body** contains returned data.
-
-## 2. Get the lesson
+For a fresh copy:
 
 ```sh
-git clone --branch tutorial-01-first-api https://github.com/Jxstxn629/web-dev-foundations.git
+git clone --branch tutorial-02-html-response https://github.com/Jxstxn629/web-dev-foundations.git
 cd web-dev-foundations
 ```
 
-The repository is private, so cloning requires access and GitHub authentication. Already cloned it? Save your changes, run `git fetch origin`, then `git switch tutorial-01-first-api`.
+Already have the repository? Stop the server and save or commit your exercise changes before switching:
 
-This branch includes a completed `main.py`. Run it to explore, or replace its contents with step 4 and build it up yourself.
+```sh
+git fetch origin
+git switch tutorial-02-html-response
+```
 
-## 3. Install dependencies
+This branch contains the completed example. To follow the steps yourself, remove the HTMLResponse import and the /page endpoint from main.py, then add them back as you work.
 
-Create an isolated environment so this project's packages stay separate.
+The JSON endpoints from Tutorial 1 remain available. The main branch still contains only the repository overview.
+
+## 2. Prepare the environment
+
+If your virtual environment from Tutorial 1 already exists, activate it and install requirements. Otherwise create it first.
 
 **Windows PowerShell:**
 
@@ -44,7 +36,7 @@ python -m venv .venv
 python -m pip install -r requirements.txt
 ```
 
-If PowerShell blocks activation, use `.\.venv\Scripts\python.exe` instead of `python` in the installation and server commands. No execution-policy change is needed.
+If activation is blocked, use `.\.venv\Scripts\python.exe` instead of `python` in installation and server commands.
 
 **macOS / Linux:**
 
@@ -54,119 +46,132 @@ source .venv/bin/activate
 python -m pip install -r requirements.txt
 ```
 
-FastAPI defines our endpoints. Uvicorn runs the HTTP server. The requirements file pins the direct dependencies to the versions checked for this lesson.
+No new dependencies are needed for this lesson.
 
-## 4. Create your first endpoint
+## 3. Choose an HTML response
 
-Put this in `main.py`:
+In Tutorial 1, endpoints returned dictionaries as JSON. A browser can also receive HTML, which describes a document's structure.
+
+Add this import to main.py:
 
 ```python
-from fastapi import FastAPI
-
-app = FastAPI(title="My First API")
-
-
-@app.get("/")
-def read_root() -> dict[str, str]:
-    return {"message": "Welcome to your first API!"}
+from fastapi.responses import HTMLResponse
 ```
 
-The decorator `@app.get("/")` connects GET requests for the root path to `read_root`. The function returns a dictionary, which FastAPI converts to JSON. The return annotation describes the expected Python value.
+Then add a new endpoint below the existing functions:
 
-## 5. Start the server
+```python
+@app.get("/page", response_class=HTMLResponse)
+def read_page() -> str:
+    return """<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>My First Web Page</title>
+</head>
+<body>
+    <main>
+        <h1>Hello from the server!</h1>
+        <p>This HTML was returned by a GET endpoint.</p>
+        <ul>
+            <li>The browser requests a page.</li>
+            <li>The server responds with HTML.</li>
+            <li>The browser renders the HTML.</li>
+        </ul>
+        <p><a href="/hello?name=Ada">Compare with a JSON response</a></p>
+    </main>
+</body>
+</html>"""
+```
 
-Run this from the folder containing `main.py`:
+The triple quotes create a multiline Python string. The function's return type is str; the decorator tells FastAPI to send that string using HTMLResponse. Its Content-Type is text/html with a UTF-8 charset. The endpoint is also documented as returning HTML.
+
+Simply returning an HTML-looking string with FastAPI's default JSON response would serialize it as a JSON string. The response format must match the intended content.
+
+## 4. Read the HTML
+
+| Element | Purpose |
+| --- | --- |
+| <!doctype html> | Declares a modern HTML document. |
+| html lang="en" | Sets the document language to English. |
+| head | Contains metadata about the page. |
+| meta charset | Declares the text encoding. |
+| meta viewport | Helps the page use the device's viewport width. |
+| title | Sets the browser tab's title. |
+| body and main | Contain the visible page and its main content. |
+| h1 and p | Define a heading and paragraph. |
+| ul and li | Define a bulleted list and its items. |
+| a href | Creates a link to another URL. |
+
+The HTML uses meaningful elements so its structure is understandable without visual styling.
+
+## 5. Run and inspect the page
 
 ```sh
 python -m uvicorn main:app --reload
 ```
 
-`main:app` means “use the app object in main.py.” `--reload` restarts the server when code changes; use it for local development.
+Open <http://127.0.0.1:8000/page>. Expect a heading, a paragraph, a three-item list, and a link. The browser tab should say **My First Web Page**.
 
-Leave the terminal running. Open <http://127.0.0.1:8000/> in your browser:
+Click the link. It sends a new GET request to /hello?name=Ada and displays the JSON greeting from Tutorial 1. Use your browser's Back button to return to the page.
 
-```json
-{"message": "Welcome to your first API!"}
-```
+Open developer tools, select **Network**, and reload /page. Select the page request and inspect:
 
-`127.0.0.1` means your own computer, and `8000` is the server's port.
+- **Method:** GET.
+- **Status:** 200 OK.
+- **Content-Type:** text/html; charset=utf-8.
+- **Response body:** the HTML source.
 
-Open <http://127.0.0.1:8000/docs>. Expand **GET /**, select **Try it out**, then **Execute**. Inspect the status code (`200`), response body, and `application/json` content type.
+Use the browser's **View Page Source** command to compare the markup with the rendered page. The server sends text; the browser interprets its HTML structure. No JavaScript or separate HTML file is needed for this example.
 
-## 6. Accept a query parameter
+## 6. Compare HTML and JSON
 
-Change the first import to:
-
-```python
-from fastapi import FastAPI, Query
-```
-
-Keep your existing app and root endpoint, then append:
-
-```python
-@app.get("/hello")
-def greet(name: str = Query(default="world", min_length=1, max_length=50)) -> dict[str, str]:
-    return {"message": f"Hello, {name}!"}
-```
-
-Visit <http://127.0.0.1:8000/hello?name=Ada>. Expected response:
-
-```json
-{"message": "Hello, Ada!"}
-```
-
-Omitting `name` uses the default value `world`. Supplying an empty name fails validation. Names must contain 1–50 characters; spaces still count as characters.
-
-## 7. Check success and failure
-
-Try these URLs in your browser. Open developer tools, choose **Network**, and reload to inspect status codes. You can also try the defined endpoints in `/docs`.
-
-| Request | Status | Expected result |
+| Request | Content type | What the browser receives |
 | --- | --- | --- |
-| GET / | 200 | Welcome message |
-| GET /hello | 200 | Hello, world! |
-| GET /hello?name=Ada | 200 | Hello, Ada! |
-| GET /hello?name= | 422 | Input validation error |
-| GET /missing | 404 | Endpoint not found |
+| GET / | application/json | A welcome message as structured data. |
+| GET /hello?name=Ada | application/json | A greeting as structured data. |
+| GET /page | text/html; charset=utf-8 | A document to render as a page. |
+| GET /missing | application/json | A 404 error response. |
 
-A `404` means no matching route was found. A `422` here means the input violated the endpoint's validation rules. Read the error body for details.
+HTML and JSON both travel in HTTP responses. Choosing HTML for one endpoint does not change the other endpoints.
 
-## 8. Practice
+Open <http://127.0.0.1:8000/docs> and try GET /page. Inspect the response body and headers there, then visit /page directly to see normal browser rendering.
 
-1. Add `GET /health` returning `{"status":"ok"}`. Verify status 200 and check that it appears in `/docs`.
-2. Add `GET /about` returning a project name and a short description. Choose clear JSON keys.
-3. Try a 50-character name and a 51-character name. Predict the status codes first.
-4. Optional challenge: reject names consisting only of spaces. Decide what error response to return, and confirm normal names still work.
+## 7. Practice
+
+1. Change the heading and tab title. Save, reload, and confirm both changed.
+2. Add an h2 heading called “What I learned” followed by a list of three points.
+3. Add GET /about returning a complete HTML document with status 200. Give it an appropriate title and a link back to /page.
+4. Add a link from /page to /about. Follow both links and inspect their GET requests.
+5. Predict what happens if you remove response_class=HTMLResponse from /page. Try it, inspect the content type and response body, then restore it.
 
 ## Good habits
 
-- Give functions descriptive names and keep endpoints focused.
-- Validate input at the API boundary; check invalid inputs as well as valid ones.
-- Use GET to retrieve data without changing application state.
-- Keep packages in a virtual environment and dependencies in the repository.
-- Keep secrets and local environment files out of Git; this branch includes a `.gitignore`.
-- Make a small commit after each working exercise and describe the change.
+- Use GET to retrieve a page without changing server-side data.
+- Match the response type to the content you return.
+- Use descriptive function names, page titles, and semantic HTML elements.
+- Keep user input out of raw HTML strings. If you later insert user text into an HTML text node, escape it; use templates with autoescaping as pages grow. Validation alone does not make text safe to embed in HTML.
+- Keep this small example readable. Separating HTML into templates is a later step.
 
 ## Troubleshooting
 
 | Problem | What to check |
 | --- | --- |
-| Python command not found | Install Python and reopen the terminal; use python3 on macOS/Linux when creating the environment. |
-| No module named fastapi or uvicorn | Install requirements using the same environment's Python that runs the server. |
-| Could not import module main | Run the server from the directory containing main.py. |
-| Port already in use | Stop the other server, or add --port 8001 and use 8001 in your URLs. |
-| Browser cannot connect | Keep the server running and check the terminal for errors. |
+| Browser shows a quoted string instead of a page | Check the HTMLResponse import and response_class on /page. |
+| /page returns 404 | Check the URL, save main.py, and confirm you started the server from this lesson's directory. |
+| Syntax error after editing HTML | Keep the opening and closing triple quotes intact. |
+| Old page content appears | Save the file, check the reload logs, and refresh the browser. |
+| Port already in use | Stop the earlier server with Ctrl+C, or use --port 8001 and update the URL. |
 
-Stop the server with **Ctrl+C**. If you activated the environment, run `deactivate` when finished.
+Stop the server with **Ctrl+C**. Run `deactivate` if you activated the environment.
 
 ## Completion checklist
 
-- [ ] Explain the client/server request and response.
-- [ ] Identify the method, path, and query parameter in a request.
-- [ ] Return JSON from an endpoint.
-- [ ] Distinguish successful responses, validation errors, and missing routes.
-- [ ] Complete the health and about exercises.
+- [ ] Explain why this endpoint uses HTMLResponse.
+- [ ] Find the Content-Type header in browser developer tools.
+- [ ] Distinguish HTML source from the rendered document.
+- [ ] Create /about and navigate between the two pages.
+- [ ] Confirm that the original JSON endpoints still work.
 
-This lesson does not require a database or deployment. The repository's `main` branch remains an overview only; this branch contains Tutorial 1.
-
-Further reading: [FastAPI first steps](https://fastapi.tiangolo.com/tutorial/first-steps/) and [query validation](https://fastapi.tiangolo.com/tutorial/query-params-str-validations/).
+Further reading: [FastAPI HTML responses](https://fastapi.tiangolo.com/advanced/custom-response/#html-response).
