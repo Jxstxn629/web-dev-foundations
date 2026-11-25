@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>My Notes — Tutorial 5</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <script src="/static/app.js" defer></script>
+</head>
+<body>
+<main>
+    <p class="eyebrow">WEB DEVELOPMENT FOUNDATIONS · TUTORIAL 5</p>
+    <h1>My notes</h1>
+    <p>Create a note, restart the server, and find it here again.</p>
+
+    <section aria-labelledby="create-heading">
+        <h2 id="create-heading">Create a note</h2>
+        <form id="note-form">
+            <fieldset id="note-fields">
+                <legend>Note details</legend>
+                <label for="title">Title (required)</label>
+                <input id="title" name="title" required maxlength="100"
+                       aria-describedby="title-hint title-error">
+                <small id="title-hint">Up to 100 characters.</small>
+                <p id="title-error" class="error"></p>
+
+                <label for="content">Content</label>
+                <textarea id="content" name="content" rows="4" maxlength="1000"
+                          aria-describedby="content-hint content-error"></textarea>
+                <small id="content-hint">Optional. Up to 1,000 characters.</small>
+                <p id="content-error" class="error"></p>
+
+                <button id="submit-button" type="submit">Create note</button>
+            </fieldset>
+        </form>
+        <p id="form-status" role="status" aria-live="polite"></p>
+        <noscript>This form requires JavaScript. You can try the API at /docs.</noscript>
+    </section>
+
+    <section aria-labelledby="notes-heading">
+        <div class="section-heading">
+            <h2 id="notes-heading">Saved notes</h2>
+            <button id="refresh-button" type="button">Refresh notes</button>
+        </div>
+        <p id="list-status" role="status" aria-live="polite"></p>
+        <ul id="notes-list"></ul>
+    </section>
+    <section aria-labelledby="find-heading">
+        <h2 id="find-heading">Find a note by ID</h2>
+        <form id="find-form">
+            <label for="note-id">Note ID</label>
+            <input id="note-id" name="note-id" required aria-describedby="find-hint">
+            <small id="find-hint">Copy an ID from the saved notes above, or try missing-note.</small>
+            <p><button id="find-button" type="submit">Find note</button></p>
+        </form>
+        <p id="find-status" role="status" aria-live="polite"></p>
+        <div id="found-note"></div>
+    </section>
+    <footer>Notes are saved on this server and remain after a restart.</footer>
+</main>
+</body>
+</html>
