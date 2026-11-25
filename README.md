@@ -1,8 +1,8 @@
 # Tutorial 2: Returning HTML from a GET Endpoint
 
-Use the API from Tutorial 1 to serve a web page. You will learn how the response's content type tells the browser what it received, and how HTML becomes a rendered page.
+Create a small Python web server from scratch and serve a web page. This lesson is standalone; no earlier tutorial is required. You will learn how the response's content type tells the browser what it received, and how HTML becomes a rendered page.
 
-**Time:** 20–30 minutes. **Prerequisites:** [Tutorial 1](https://github.com/Jxstxn629/web-dev-foundations/tree/tutorial-01-first-api), Python 3.10+, Git, and a text editor.
+**Time:** 20–30 minutes. **Prerequisites:** Python 3.10+, Git, a text editor, and basic familiarity with Python functions and strings.
 
 ## 1. Get the lesson
 
@@ -20,13 +20,13 @@ git fetch origin
 git switch tutorial-02-html-response
 ```
 
-This branch contains the completed example. To follow the steps yourself, remove the HTMLResponse import and the /page endpoint from main.py, then add them back as you work.
+This branch contains everything needed, including a completed main.py and requirements.txt. You can run the example directly or replace main.py with the complete code in step 3 as you follow along.
 
-The JSON endpoints from Tutorial 1 remain available. The main branch still contains only the repository overview.
+The example includes an HTML page and a small JSON endpoint for comparison. The main branch still contains only the repository overview.
 
 ## 2. Prepare the environment
 
-If your virtual environment from Tutorial 1 already exists, activate it and install requirements. Otherwise create it first.
+A virtual environment keeps this project's Python packages separate from other projects. Create and activate one using the commands for your operating system below. If .venv already exists, skip its creation command.
 
 **Windows PowerShell:**
 
@@ -46,21 +46,28 @@ source .venv/bin/activate
 python -m pip install -r requirements.txt
 ```
 
-No new dependencies are needed for this lesson.
+requirements.txt lists the packages for this example. FastAPI connects URLs to Python functions; Uvicorn runs the HTTP server. Install them using the commands above.
 
 ## 3. Choose an HTML response
 
-In Tutorial 1, endpoints returned dictionaries as JSON. A browser can also receive HTML, which describes a document's structure.
+Your browser is the **client**. It sends an HTTP **request** to the Python **server**, which sends back a **response**. GET is the HTTP method used here to retrieve content. An endpoint is a method and path, such as GET /page.
 
-Add this import to main.py:
+A response includes a status code, headers, and a body. A status of 200 means success. The Content-Type header identifies the body's format: HTML for a web document or JSON for structured data.
+
+Replace main.py with this complete application:
 
 ```python
+from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
-```
 
-Then add a new endpoint below the existing functions:
+app = FastAPI(title="HTML Response Example")
 
-```python
+
+@app.get("/")
+def read_root() -> dict[str, str]:
+    return {"message": "Welcome to your first API!"}
+
+
 @app.get("/page", response_class=HTMLResponse)
 def read_page() -> str:
     return """<!doctype html>
@@ -79,11 +86,13 @@ def read_page() -> str:
             <li>The server responds with HTML.</li>
             <li>The browser renders the HTML.</li>
         </ul>
-        <p><a href="/hello?name=Ada">Compare with a JSON response</a></p>
+        <p><a href="/">Compare with a JSON response</a></p>
     </main>
 </body>
 </html>"""
 ```
+
+app is the FastAPI application. Each @app.get decorator connects a path to the function below it. The root endpoint (/) returns a dictionary as JSON. The /page endpoint returns an HTML document.
 
 The triple quotes create a multiline Python string. The function's return type is str; the decorator tells FastAPI to send that string using HTMLResponse. Its Content-Type is text/html with a UTF-8 charset. The endpoint is also documented as returning HTML.
 
@@ -112,9 +121,11 @@ The HTML uses meaningful elements so its structure is understandable without vis
 python -m uvicorn main:app --reload
 ```
 
+Keep the terminal running. In main:app, main refers to main.py and app is the application object. The --reload option restarts the server when you save changes; it is for local development. The address 127.0.0.1 refers to your computer and 8000 is the server's port.
+
 Open <http://127.0.0.1:8000/page>. Expect a heading, a paragraph, a three-item list, and a link. The browser tab should say **My First Web Page**.
 
-Click the link. It sends a new GET request to /hello?name=Ada and displays the JSON greeting from Tutorial 1. Use your browser's Back button to return to the page.
+Click the link. It sends a new GET request to / and displays {"message":"Welcome to your first API!"} as JSON. Use your browser's Back button to return to the page.
 
 Open developer tools, select **Network**, and reload /page. Select the page request and inspect:
 
@@ -130,11 +141,10 @@ Use the browser's **View Page Source** command to compare the markup with the re
 | Request | Content type | What the browser receives |
 | --- | --- | --- |
 | GET / | application/json | A welcome message as structured data. |
-| GET /hello?name=Ada | application/json | A greeting as structured data. |
 | GET /page | text/html; charset=utf-8 | A document to render as a page. |
 | GET /missing | application/json | A 404 error response. |
 
-HTML and JSON both travel in HTTP responses. Choosing HTML for one endpoint does not change the other endpoints.
+JSON represents structured data using keys and values; HTML describes a document that the browser renders. A 404 response means the requested route was not found. HTML and JSON both travel in HTTP responses. Choosing HTML for one endpoint does not change the other endpoints.
 
 Open <http://127.0.0.1:8000/docs> and try GET /page. Inspect the response body and headers there, then visit /page directly to see normal browser rendering.
 
@@ -158,6 +168,8 @@ Open <http://127.0.0.1:8000/docs> and try GET /page. Inspect the response body a
 
 | Problem | What to check |
 | --- | --- |
+| No module named fastapi or uvicorn | Install requirements using the same virtual environment's Python that runs the server. |
+| Could not import module main | Run the server command from the folder containing main.py. |
 | Browser shows a quoted string instead of a page | Check the HTMLResponse import and response_class on /page. |
 | /page returns 404 | Check the URL, save main.py, and confirm you started the server from this lesson's directory. |
 | Syntax error after editing HTML | Keep the opening and closing triple quotes intact. |
@@ -172,6 +184,6 @@ Stop the server with **Ctrl+C**. Run `deactivate` if you activated the environme
 - [ ] Find the Content-Type header in browser developer tools.
 - [ ] Distinguish HTML source from the rendered document.
 - [ ] Create /about and navigate between the two pages.
-- [ ] Confirm that the original JSON endpoints still work.
+- [ ] Explain how the JSON response at / differs from the HTML response at /page.
 
 Further reading: [FastAPI HTML responses](https://fastapi.tiangolo.com/advanced/custom-response/#html-response).

@@ -1,19 +1,14 @@
 """Completed example for Tutorial 2: Returning HTML from a GET Endpoint."""
 
-from fastapi import FastAPI, Query
+from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 
-app = FastAPI(title="My First API")
+app = FastAPI(title="HTML Response Example")
 
 
 @app.get("/")
 def read_root() -> dict[str, str]:
     return {"message": "Welcome to your first API!"}
-
-
-@app.get("/hello")
-def greet(name: str = Query(default="world", min_length=1, max_length=50)) -> dict[str, str]:
-    return {"message": f"Hello, {name}!"}
 
 
 @app.get("/page", response_class=HTMLResponse)
@@ -34,7 +29,7 @@ def read_page() -> str:
             <li>The server responds with HTML.</li>
             <li>The browser renders the HTML.</li>
         </ul>
-        <p><a href="/hello?name=Ada">Compare with a JSON response</a></p>
+        <p><a href="/">Compare with a JSON response</a></p>
     </main>
 </body>
 </html>"""
