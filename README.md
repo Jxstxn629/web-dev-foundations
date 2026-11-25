@@ -26,7 +26,7 @@ Choose a tutorial below to open its instructions, runnable example, and exercise
 | --- | --- | --- |
 | [1. Creating Your First API](https://github.com/Jxstxn629/web-dev-foundations/tree/tutorial-01-first-api) | GET endpoints, JSON responses, query parameters, input validation, and HTTP status codes. | Python 3.10+, Git, a text editor, and basic Python functions and dictionaries. |
 | [2. Returning HTML from a GET Endpoint](https://github.com/Jxstxn629/web-dev-foundations/tree/tutorial-02-html-response) | Returning inline HTML, inspecting content types, and serving a separate HTML file with FileResponse. | Python 3.10+, Git, a text editor, and basic Python functions and strings. Standalone; Tutorial 1 is not required. |
-| [3. Creating a POST Endpoint](https://github.com/Jxstxn629/web-dev-foundations/tree/tutorial-03-post-endpoint) | Sending JSON request bodies, then extending the endpoint with a Pydantic request model, validation, and note creation with status 201. | Python 3.10+, Git, a text editor, and basic Python functions, dictionaries, and classes. Standalone; earlier tutorials are not required. |
+| [3. Creating a POST Endpoint](https://github.com/Jxstxn629/web-dev-foundations/tree/tutorial-03-post-endpoint) | Sending JSON request bodies, Pydantic request validation, note creation with status 201, and custom response models with a message/data structure. | Python 3.10+, Git, a text editor, and basic Python functions, dictionaries, and classes. Standalone; earlier tutorials are not required. |
 
 Each tutorial branch includes setup instructions. When switching branches locally, save or commit your changes first.
 
