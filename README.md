@@ -1,8 +1,8 @@
 # Tutorial 3: Creating a POST Endpoint
 
-Build a POST endpoint that accepts JSON, then extend it with a Pydantic request model to validate input and create notes.
+Build a POST endpoint that accepts JSON, then extend it with Pydantic request validation, note creation, and a custom response model.
 
-This lesson is standalone. **Time:** 35–45 minutes. **Prerequisites:** Python 3.10+, Git, a text editor, and basic Python functions, dictionaries, and classes.
+This lesson is standalone. **Time:** 45–60 minutes. **Prerequisites:** Python 3.10+, Git, a text editor, and basic Python functions, dictionaries, and classes.
 
 ## 1. Get the lesson
 
@@ -18,7 +18,7 @@ git fetch origin
 git switch tutorial-03-post-endpoint
 ```
 
-The checked-in main.py is the completed extension from step 7. To build it progressively, replace main.py with the initial example in step 3, then follow the remaining steps.
+The checked-in main.py is the completed custom-response extension from step 10. To build it progressively, replace main.py with the initial example in step 3, then follow the remaining steps. If you run the checked-in version directly, successful POST responses use step 10's message/data structure.
 
 ## 2. Set up Python
 
@@ -221,7 +221,7 @@ Submitting the same POST twice creates two separate notes with different IDs. A 
 
 ## 8. Check validation and errors
 
-Use the completed version and replace the POST body in /docs for each case:
+Use the step 7 version and replace the POST body in /docs for each case. These status codes also apply to step 10's final version; its successful POST body wraps the note inside data.
 
 | Body or action | Expected result |
 | --- | --- |
@@ -249,9 +249,107 @@ Compare GET /notes before and after an invalid POST: the list should not grow. N
 4. Restart the server and confirm the list is empty. Explain why a database would change this behavior.
 5. Explain why POST and GET can use the same /notes path without being the same endpoint.
 
+## 10. Extension: create a custom response model
+
+A request model defines what a client may send. A response model defines what your API promises to return. Keeping them separate lets the output include server-generated fields without allowing clients to submit those fields.
+
+We will use three models:
+
+| Model | Responsibility |
+| --- | --- |
+| NoteCreate | Validate incoming title and content. |
+| NoteResponse | Describe the public note: id, title, and content. |
+| NoteCreatedResponse | Wrap a created note in a message/data response. |
+
+NoteResponse inherits directly from BaseModel, so its output fields are defined independently of the request rules. NoteCreatedResponse nests a NoteResponse in its data field.
+
+Replace main.py with the complete version below. This replaces the earlier Note model and endpoints; do not keep duplicate route definitions. If you added exercise fields such as category, add them to NoteResponse and pass their values when constructing it if you want them in the response.
+
+```python
+from uuid import uuid4
+
+from fastapi import FastAPI, status
+from pydantic import BaseModel, ConfigDict, Field
+
+app = FastAPI(title="My First POST Endpoint")
+
+
+class NoteCreate(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True, extra="forbid")
+
+    title: str = Field(min_length=1, max_length=100)
+    content: str = Field(default="", max_length=1000)
+
+
+class NoteResponse(BaseModel):
+    id: str
+    title: str
+    content: str
+
+
+class NoteCreatedResponse(BaseModel):
+    message: str
+    data: NoteResponse
+
+
+notes: list[NoteResponse] = []
+
+
+@app.post("/notes", status_code=status.HTTP_201_CREATED, response_model=NoteCreatedResponse)
+def create_note(note: NoteCreate) -> NoteCreatedResponse:
+    created_note = NoteResponse(id=str(uuid4()), title=note.title, content=note.content)
+    notes.append(created_note)
+    return NoteCreatedResponse(message="Note created", data=created_note)
+
+
+@app.get("/notes", response_model=list[NoteResponse])
+def list_notes() -> list[NoteResponse]:
+    return notes
+```
+
+The POST decorator declares response_model=NoteCreatedResponse. FastAPI uses it to serialize and validate the result and describe the response in /docs. Fields outside the declared model are excluded from ordinary returned data with these models' default settings.
+
+The function constructs a NoteResponse and wraps it in NoteCreatedResponse. Python's return annotation also makes the function's intended result explicit.
+
+Repeat the POST request from step 4. It now returns status **201** with:
+
+```json
+{
+  "message": "Note created",
+  "data": {
+    "id": "a-server-generated-UUID",
+    "title": "Learn POST requests",
+    "content": "Send JSON to my API."
+  }
+}
+```
+
+Your UUID will differ. The request body is unchanged: send title and content, without message, data, or id.
+
+GET /notes still returns a plain list of public notes, each matching NoteResponse. Only the POST success response uses the message/data wrapper. Clients should now read a created note's id from data.id rather than id.
+
+### Verify the response contract
+
+1. Refresh /docs and inspect POST /notes. The request uses NoteCreate; the 201 response uses NoteCreatedResponse, with nested NoteResponse data.
+2. Submit a valid note. Confirm the status is 201 and the body has message and data.
+3. Fetch GET /notes. Confirm its list contains the same note ID found in the POST response's data.id.
+4. Submit {}. Confirm the response is still 422 with the usual detail field, and no note was created. A success response model does not automatically wrap validation errors.
+5. Try sending an id in the request. It remains forbidden, even though id is present in the response model.
+
+A response validation failure is a server-side programming error, not a 422 input error. For example, leaving a required id out of NoteResponse causes a server error. Do not catch that mistake and report it as invalid client input.
+
+Returning a Response or JSONResponse object directly bypasses FastAPI's response-model validation and filtering. Use normal model instances or data when relying on response_model.
+
+### Practice with custom responses
+
+1. Add a required note_count: int field to NoteCreatedResponse, and populate it using len(notes). Confirm the value increases after each successful POST.
+2. Add a NoteListResponse with a data field containing list[NoteResponse], then update GET /notes to use it. Update both the endpoint's response_model and return value.
+3. Explain why adding a response field does not automatically make it an allowed request field.
+
 ## Good habits
 
 - Put input rules in a request model so the endpoint can focus on its work.
+- Define public output fields in a separate response model and keep documented response shapes consistent.
 - Keep client-provided fields separate from server-generated values.
 - Use 201 when a resource is created, and check error paths as well as success.
 - Validate before changing application state.
@@ -276,8 +374,10 @@ Stop the server with **Ctrl+C**. Run deactivate if you activated the environment
 - [ ] Send a JSON POST body through /docs or a command-line client.
 - [ ] Explain the difference between request and response bodies.
 - [ ] Define a Pydantic request model and explain its rules.
+- [ ] Define a separate response model and return a nested message/data response.
+- [ ] Explain why request validation errors still use detail rather than the success wrapper.
 - [ ] Create a note with status 201 and retrieve it with GET.
 - [ ] Confirm invalid requests do not create notes.
 - [ ] Explain why notes disappear on restart.
 
-Further reading: [FastAPI request bodies](https://fastapi.tiangolo.com/tutorial/body/), [response status codes](https://fastapi.tiangolo.com/tutorial/response-status-code/), and [Pydantic custom validators](https://docs.pydantic.dev/latest/concepts/validators/).
+Further reading: [FastAPI request bodies](https://fastapi.tiangolo.com/tutorial/body/), [response models](https://fastapi.tiangolo.com/tutorial/response-model/), [response status codes](https://fastapi.tiangolo.com/tutorial/response-status-code/), and [Pydantic custom validators](https://docs.pydantic.dev/latest/concepts/validators/).

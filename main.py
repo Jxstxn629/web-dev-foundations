@@ -15,20 +15,27 @@ class NoteCreate(BaseModel):
     content: str = Field(default="", max_length=1000)
 
 
-class Note(NoteCreate):
+class NoteResponse(BaseModel):
     id: str
+    title: str
+    content: str
 
 
-notes: list[Note] = []
+class NoteCreatedResponse(BaseModel):
+    message: str
+    data: NoteResponse
 
 
-@app.post("/notes", status_code=status.HTTP_201_CREATED, response_model=Note)
-def create_note(note: NoteCreate) -> Note:
-    created_note = Note(id=str(uuid4()), title=note.title, content=note.content)
+notes: list[NoteResponse] = []
+
+
+@app.post("/notes", status_code=status.HTTP_201_CREATED, response_model=NoteCreatedResponse)
+def create_note(note: NoteCreate) -> NoteCreatedResponse:
+    created_note = NoteResponse(id=str(uuid4()), title=note.title, content=note.content)
     notes.append(created_note)
-    return created_note
+    return NoteCreatedResponse(message="Note created", data=created_note)
 
 
-@app.get("/notes", response_model=list[Note])
-def list_notes() -> list[Note]:
+@app.get("/notes", response_model=list[NoteResponse])
+def list_notes() -> list[NoteResponse]:
     return notes
